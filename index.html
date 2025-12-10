@@ -1,0 +1,589 @@
+import React, { useState, useEffect } from 'react';
+import { Play, RotateCcw, CheckCircle, AlertTriangle, BookOpen, ArrowRight, HelpCircle, Layout, Code, Bug, Info, X, ChevronRight, Star, ArrowUp } from 'lucide-react';
+
+// --- Components & Data ---
+
+// Standard Flowchart Symbols
+const SYMBOLS = {
+  TERMINAL: { label: 'Terminal', shape: 'rounded-full', color: 'bg-rose-100 border-rose-500', desc: 'Start or End' },
+  PROCESS: { label: 'Process', shape: 'rounded-sm', color: 'bg-blue-100 border-blue-500', desc: 'Action step' },
+  INPUT: { label: 'Input/Output', shape: 'parallelogram', color: 'bg-green-100 border-green-500', desc: 'Get/Give Info' },
+  DECISION: { label: 'Decision', shape: 'rotate-45', color: 'bg-amber-100 border-amber-500', desc: 'Question (Yes/No)' },
+};
+
+const shapeStyles = {
+  parallelogram: { transform: 'skew(-20deg)' },
+  diamond: { transform: 'rotate(45deg)' }
+};
+
+const Header = ({ setMode, currentMode }) => (
+  <header className="bg-slate-900 text-white p-4 shadow-lg relative z-50">
+    <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+      <div className="mb-4 md:mb-0">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Layout className="w-6 h-6 text-blue-400" />
+          FlowLogic Academy
+        </h1>
+        <p className="text-slate-400 text-sm">Grade 10: Introduction to Algorithms</p>
+      </div>
+      <div className="flex gap-2 bg-slate-800 p-1 rounded-lg relative">
+        <button 
+          onClick={() => setMode('learn')} 
+          className={`px-4 py-2 rounded-md transition-all ${currentMode === 'learn' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`}
+        >
+          <BookOpen className="w-4 h-4 inline mr-2"/> Reference Sheet
+        </button>
+        
+        <div className="relative">
+          <button 
+            onClick={() => setMode('practice')} 
+            className={`px-4 py-2 rounded-md transition-all ${currentMode === 'practice' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`}
+          >
+            <Code className="w-4 h-4 inline mr-2"/> Workshop
+          </button>
+
+          {/* Animated Guide Arrow - Visible only in Learn Mode */}
+          {currentMode === 'learn' && (
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce pointer-events-none">
+               <ArrowUp className="w-5 h-5 text-emerald-400 fill-emerald-400" />
+               <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap border border-emerald-400">
+                  Click to Start
+               </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </header>
+);
+
+const QuickReferencePopup = ({ onClose }) => (
+  <div className="absolute top-16 right-4 z-50 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 animate-in fade-in slide-in-from-top-4">
+    <div className="p-3 bg-slate-100 border-b flex justify-between items-center rounded-t-xl">
+      <h3 className="font-bold text-slate-800 text-sm">Symbol Guide</h3>
+      <button onClick={onClose}><X className="w-4 h-4 text-slate-500 hover:text-red-500"/></button>
+    </div>
+    <div className="p-3 space-y-3">
+      {Object.entries(SYMBOLS).map(([key, val]) => (
+        <div key={key} className="flex items-center gap-3">
+          <div className={`w-8 h-8 flex shrink-0 items-center justify-center border text-[8px] font-bold ${val.color} ${val.shape === 'rounded-full' ? 'rounded-full' : val.shape === 'rounded-sm' ? 'rounded-sm' : ''}`}>
+             <div style={val.shape === 'parallelogram' ? shapeStyles.parallelogram : val.shape === 'rotate-45' ? shapeStyles.diamond : {}}>
+               <div style={val.shape === 'parallelogram' ? {transform: 'skew(20deg)'} : val.shape === 'rotate-45' ? {transform: 'rotate(-45deg)'} : {}}>
+                  {key === 'DECISION' ? '?' : ''}
+               </div>
+             </div>
+          </div>
+          <div>
+            <p className="font-bold text-xs text-slate-800">{val.label}</p>
+            <p className="text-sm text-slate-500 leading-tight">{val.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const LearningModule = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 animate-in fade-in zoom-in duration-300 max-w-6xl mx-auto">
+    <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500 flex flex-col">
+      <h2 className="text-xl font-bold mb-4 text-slate-800">Introduction to Flowcharts</h2>
+      <p className="text-slate-600 mb-4">
+        As discussed: <strong>How do you decide what to wear in the morning?</strong>
+      </p>
+      <ul className="list-disc pl-5 space-y-2 text-slate-700 text-sm mb-6">
+        <li><strong>Decompose</strong> problems into small steps.</li>
+        <li><strong>Visualize</strong> the sequence (what comes first?).</li>
+        <li><strong>Debug</strong> logic (what if it rains?).</li>
+      </ul>
+
+      {/* Instructions for Level Selection */}
+      <div className="mt-auto pt-6 border-t border-slate-200">
+        <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <Info className="w-5 h-5 text-blue-500"/>
+            Select Your Activity Level
+        </h3>
+        <p className="text-sm text-slate-500 mb-3 italic">When you switch to the Workshop, choose based on your development:</p>
+        <ul className="space-y-3 text-sm">
+            <li className="flex items-center gap-3 bg-rose-50 p-2 rounded-lg border border-rose-100">
+                <span className="bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded text-xs shrink-0 w-20 text-center">Group 1</span>
+                <span className="text-slate-700"><strong>Challenge yourself!</strong> Choose this to debug and fix code.</span>
+            </li>
+            <li className="flex items-center gap-3 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-xs shrink-0 w-20 text-center">Group 2</span>
+                <span className="text-slate-700"><strong>Confident?</strong> Choose this if you are ready to build logic.</span>
+            </li>
+            <li className="flex items-center gap-3 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                <span className="bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded text-xs shrink-0 w-20 text-center">Group 3</span>
+                <span className="text-slate-700"><strong>Find Group 2 difficult?</strong> Choose this to practice routines.</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div className="bg-white p-6 rounded-xl shadow-md">
+      <h2 className="text-xl font-bold mb-4 text-slate-800">Flowchart Symbols</h2>
+      <div className="space-y-4">
+        {Object.entries(SYMBOLS).map(([key, val]) => (
+          <div key={key} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+            <div className={`w-16 h-10 flex items-center justify-center border-2 text-xs font-bold ${val.color} ${val.shape === 'rounded-full' ? 'rounded-full' : val.shape === 'rounded-sm' ? 'rounded-sm' : ''}`}>
+              <div style={val.shape === 'parallelogram' ? shapeStyles.parallelogram : val.shape === 'rotate-45' ? shapeStyles.diamond : {}}>
+                 <span style={val.shape === 'parallelogram' ? {transform: 'skew(20deg)', display:'block'} : val.shape === 'rotate-45' ? {transform: 'rotate(-45deg)', display:'block'} : {}}>
+                   {key === 'DECISION' ? '?' : 'Sym'}
+                 </span>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800">{val.label}</h3>
+              <p className="text-sm text-slate-500">{val.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// --- Game Logic ---
+
+const PracticeModule = () => {
+  const [selectedGroup, setSelectedGroup] = useState(0); // 0=Support, 1=Core, 2=Extension
+  const [levelIndex, setLevelIndex] = useState(0); // Current level within the group
+  const [workspace, setWorkspace] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
+  // Data Structure: Groups containing multiple levels
+  const groups = [
+    {
+      id: 'support',
+      title: 'Group 3: Routines',
+      subtitle: 'Support Learner',
+      icon: <HelpCircle className="w-5 h-5"/>,
+      levels: [
+        {
+          id: 's1',
+          name: 'Level 1: School Morning',
+          desc: 'Complete the sequence. NOTE: The order matters! (Breakfast before Dressed).',
+          instruction: 'Select steps from the Bank in the logical order.',
+          prefilled: [
+            { id: 't1', text: 'Wake Up', type: 'TERMINAL' },
+          ],
+          // Bank is intentionally SHUFFLED relative to solution
+          bank: [
+            { id: 't4', text: 'Go to School', type: 'TERMINAL' },
+            { id: 't2', text: 'Get Dressed', type: 'PROCESS' },
+            { id: 'dist1', text: 'Go to Sleep', type: 'TERMINAL' },
+            { id: 't3', text: 'Eat Breakfast', type: 'PROCESS' },
+          ],
+          // Updated Solution: Breakfast BEFORE Dressed
+          solution: ['t1', 't3', 't2', 't4']
+        },
+        {
+          id: 's2',
+          name: 'Level 2: Making Toast',
+          desc: 'A slightly longer routine. Arrange the steps to make a slice of toast.',
+          instruction: 'Order: Get Bread -> Toast -> Butter -> Eat.',
+          prefilled: [
+             { id: 'ts1', text: 'Start', type: 'TERMINAL' },
+          ],
+          bank: [
+            { id: 'ts4', text: 'Spread Butter', type: 'PROCESS' },
+            { id: 'ts2', text: 'Get Bread', type: 'INPUT' },
+            { id: 'ts5', text: 'Eat Toast', type: 'PROCESS' },
+            { id: 'ts6', text: 'End', type: 'TERMINAL' },
+            { id: 'ts3', text: 'Toast Bread', type: 'PROCESS' },
+          ],
+          solution: ['ts1', 'ts2', 'ts3', 'ts4', 'ts5', 'ts6']
+        }
+      ]
+    },
+    {
+      id: 'core',
+      title: 'Group 2: Logic Builder',
+      subtitle: 'Average Learner',
+      icon: <Layout className="w-5 h-5"/>,
+      levels: [
+        {
+          id: 'c1',
+          name: 'Level 1: Weather Check',
+          desc: 'Build a flowchart to decide if you need an umbrella for your walk. The process ends as soon as you step out.',
+          instruction: 'Find the Decision symbol. Note: We are walking, not driving!',
+          prefilled: [],
+          bank: [
+            { id: 'c4', text: 'Take Umbrella', type: 'PROCESS' },
+            { id: 'c1', text: 'Start', type: 'TERMINAL' },
+            { id: 'c6', text: 'Start Car', type: 'PROCESS' }, // Distractor
+            { id: 'c2', text: 'Check Weather', type: 'INPUT' },
+            { id: 'c5', text: 'Go Outside', type: 'TERMINAL' },
+            { id: 'c3', text: 'Is it Raining?', type: 'DECISION' },
+          ],
+          solution: ['c1', 'c2', 'c3', 'c4', 'c5']
+        },
+        {
+          id: 'c2',
+          name: 'Level 2: Password Gate',
+          desc: 'Create a system login flow. The user must input a password, and we check if it is correct.',
+          instruction: 'Order the steps: Input -> Decision -> Success.',
+          prefilled: [],
+          bank: [
+            { id: 'p3', text: 'Is Pass Correct?', type: 'DECISION' },
+            { id: 'p5', text: 'End', type: 'TERMINAL' },
+            { id: 'p2', text: 'Input Password', type: 'INPUT' },
+            { id: 'p1', text: 'Start', type: 'TERMINAL' },
+            { id: 'p4', text: 'Access Granted', type: 'INPUT' },
+            { id: 'p_fake', text: 'Delete Account', type: 'PROCESS' } // Distractor
+          ],
+          solution: ['p1', 'p2', 'p3', 'p4', 'p5']
+        }
+      ]
+    },
+    {
+      id: 'extension',
+      title: 'Group 1: Debugger',
+      subtitle: 'High Achiever',
+      icon: <Bug className="w-5 h-5"/>,
+      levels: [
+        {
+          id: 'e1',
+          name: 'Level 1: The Infinite Loop',
+          desc: 'This grading algorithm never stops! It has an Infinite Loop error.',
+          instruction: 'Find the missing "Increment" step to fix the loop logic.',
+          prefilled: [
+            { id: 'e1', text: 'Start', type: 'TERMINAL' },
+            { id: 'e2', text: 'Count = 0', type: 'PROCESS' },
+            { id: 'e3', text: 'Is Count < 30?', type: 'DECISION' },
+            { id: 'e4', text: 'Grade Paper', type: 'PROCESS' },
+            { id: 'e6', text: 'End', type: 'TERMINAL' }
+          ],
+          bank: [
+            { id: 'fix3', text: 'Print Report', type: 'INPUT' },
+            { id: 'fix1', text: 'Count = Count + 1', type: 'PROCESS' },
+            { id: 'fix2', text: 'Count = 0', type: 'PROCESS' },
+          ],
+          solution: ['e1', 'e2', 'e3', 'e4', 'fix1', 'e6']
+        },
+        {
+          id: 'e2',
+          name: 'Level 2: The Logic Void',
+          desc: 'This accumulator program calculates a Total price, but it crashes. Why?',
+          instruction: 'Something is missing before the calculation starts. Initialize the variable!',
+          prefilled: [
+             { id: 'a1', text: 'Start', type: 'TERMINAL' },
+             // Missing Total = 0
+             { id: 'a3', text: 'Input Price', type: 'INPUT' },
+             { id: 'a4', text: 'Total = Total + Price', type: 'PROCESS' },
+             { id: 'a5', text: 'Output Total', type: 'INPUT' },
+             { id: 'a6', text: 'End', type: 'TERMINAL' }
+          ],
+          bank: [
+            { id: 'afix1', text: 'Total = 0', type: 'PROCESS' },
+            { id: 'afix2', text: 'Price = 0', type: 'PROCESS' },
+            { id: 'afix3', text: 'Delete Total', type: 'PROCESS' }
+          ],
+          solution: ['a1', 'afix1', 'a3', 'a4', 'a5', 'a6']
+        }
+      ]
+    }
+  ];
+
+  const currentGroupData = groups[selectedGroup];
+  const currentLevel = currentGroupData.levels[levelIndex];
+
+  // Initialize Level
+  useEffect(() => {
+    // Load prefilled items
+    setWorkspace([...currentLevel.prefilled]);
+    setFeedback(null);
+    setIsCompleted(false);
+  }, [selectedGroup, levelIndex]);
+
+  const addToWorkspace = (item) => {
+    if (isCompleted) return;
+    
+    let newWs = [...workspace];
+    
+    // Extension logic: Insert at specific point
+    if (selectedGroup === 2) {
+      const endIndex = newWs.findIndex(w => w.type === 'TERMINAL' && (w.text === 'End'));
+      
+      // Special case for Level 2 (Init variable) - needs to be at top
+      if (currentLevel.id === 'e2' && item.id === 'afix1') {
+         // Should be after Start (index 1)
+         // Check if already added to avoid duplicates
+         if (!newWs.some(w => w.id === item.id)) {
+            newWs.splice(1, 0, item);
+         }
+      } else if (endIndex !== -1) {
+         if (!newWs.some(w => w.id === item.id)) {
+            newWs.splice(endIndex, 0, item);
+         }
+      } else {
+         newWs.push(item);
+      }
+    } else {
+      // Support/Core: Append to end
+      newWs.push(item);
+    }
+    setWorkspace(newWs);
+    // Clear old error feedback when adding new item
+    if (feedback?.type === 'error') setFeedback(null);
+  };
+
+  const removeFromWorkspace = (index) => {
+    if (isCompleted) return;
+    
+    // Lock prefilled items for Support
+    if (selectedGroup === 0 && index < currentLevel.prefilled.length) {
+       setFeedback({ type: 'error', msg: 'This starter block is locked in place.' });
+       return;
+    }
+    // Lock prefilled for Extension (base code)
+    if (selectedGroup === 2 && currentLevel.prefilled.some(p => p.id === workspace[index].id)) {
+       setFeedback({ type: 'error', msg: 'You cannot delete the base code, only add the fix.' });
+       return;
+    }
+
+    const newWs = [...workspace];
+    newWs.splice(index, 1);
+    setWorkspace(newWs);
+    setFeedback(null);
+  };
+
+  const checkAnswer = () => {
+    const userIds = workspace.map(w => w.id);
+    const solIds = currentLevel.solution;
+    
+    // Check equality
+    const isCorrect = JSON.stringify(userIds) === JSON.stringify(solIds);
+
+    if (isCorrect) {
+      setFeedback({ type: 'success', msg: 'Correct Sequence! Logic verified.' });
+      setIsCompleted(true);
+    } else {
+      // Detailed feedback
+      if (userIds.length !== solIds.length) {
+         setFeedback({ type: 'error', msg: `Incorrect number of steps. You have ${userIds.length}, but need ${solIds.length}.` });
+      } else {
+         // Find first mismatch index
+         const diffIndex = userIds.findIndex((id, i) => id !== solIds[i]);
+         setFeedback({ type: 'error', msg: `Logic error at Step ${diffIndex + 1}. Expected: ${workspace[diffIndex] ? 'something else' : 'a step'}, but found: ${workspace[diffIndex]?.text || 'nothing'}.` });
+      }
+    }
+  };
+
+  const handleNextLevel = () => {
+    if (levelIndex < currentGroupData.levels.length - 1) {
+      setLevelIndex(levelIndex + 1);
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 md:p-6 relative">
+      {/* Quick Reference Toggle */}
+      <div className="absolute top-0 right-6 md:right-10">
+        <button 
+          onClick={() => setShowGuide(!showGuide)}
+          className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-b-lg border border-blue-200 hover:bg-blue-100 flex items-center gap-1 shadow-sm"
+        >
+          <Info className="w-3 h-3"/> {showGuide ? 'Hide Guide' : 'Show Symbols'}
+        </button>
+      </div>
+      {showGuide && <QuickReferencePopup onClose={() => setShowGuide(false)} />}
+
+      {/* Group Selection Tabs */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-center items-center">
+        {groups.map((g, idx) => (
+          <button
+            key={g.id}
+            onClick={() => { setSelectedGroup(idx); setLevelIndex(0); }}
+            className={`w-full md:w-auto px-6 py-4 rounded-xl flex items-center gap-3 border-2 transition-all ${selectedGroup === idx 
+              ? 'border-blue-500 bg-white shadow-lg scale-105' 
+              : 'border-transparent bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
+          >
+            <div className={`p-2 rounded-full ${selectedGroup === idx ? 'bg-blue-100 text-blue-600' : 'bg-slate-300'}`}>
+              {g.icon}
+            </div>
+            <div className="text-left">
+              <div className={`font-bold text-sm ${selectedGroup === idx ? 'text-blue-900' : 'text-slate-600'}`}>{g.title}</div>
+              <div className="text-xs opacity-75">{g.subtitle}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Col: Mission & Bank */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[650px]">
+          <div className="p-5 bg-slate-50 border-b border-slate-200">
+            <div className="flex justify-between items-start mb-2">
+               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white uppercase tracking-wider">
+                 {currentLevel.name}
+               </span>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                 Level {levelIndex + 1} / {currentGroupData.levels.length}
+               </span>
+            </div>
+            <h3 className="font-bold text-md text-slate-800 leading-tight mb-2">{currentLevel.desc}</h3>
+            <div className="text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-100 flex gap-2">
+               <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5"/>
+               {currentLevel.instruction}
+            </div>
+          </div>
+          
+          <div className="p-4 flex-1 overflow-y-auto bg-slate-100">
+            <h4 className="text-xs font-uppercase font-bold text-slate-400 mb-3 tracking-wider">
+              COMPONENT BANK (JUMBLED)
+            </h4>
+            <div className="space-y-2">
+              {currentLevel.bank.filter(item => !workspace.some(w => w.id === item.id) || selectedGroup === 2).map((item) => {
+                 const style = SYMBOLS[item.type];
+                 return (
+                  <button
+                    key={item.id}
+                    onClick={() => addToWorkspace(item)}
+                    disabled={isCompleted}
+                    className="w-full text-left group relative bg-white border border-slate-300 rounded-lg p-3 hover:shadow-md hover:border-blue-500 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full border-2 ${style.color} flex items-center justify-center text-[10px]`}>
+                        {item.type.substring(0,1)}
+                      </div>
+                      <span className="font-medium text-slate-700">{item.text}</span>
+                      <ArrowRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-blue-500" />
+                    </div>
+                  </button>
+                 )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Center/Right Col: Workspace */}
+        <div className="lg:col-span-2 bg-slate-50 rounded-xl shadow-inner border border-slate-200 p-6 relative flex flex-col h-[650px]">
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <button 
+              onClick={() => { 
+                setWorkspace(currentLevel.prefilled ? [...currentLevel.prefilled] : []); 
+                setFeedback(null); 
+                setIsCompleted(false); 
+              }} 
+              className="p-2 bg-white rounded-full shadow hover:bg-slate-100 text-slate-600 transition-colors"
+              title="Reset Workspace"
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="text-center mb-4">
+            <h3 className="text-slate-400 font-bold tracking-widest text-xs uppercase">Flowchart Canvas</h3>
+          </div>
+
+          {/* Visualization Area */}
+          <div className="flex-1 overflow-y-auto flex flex-col items-center gap-2 pb-20 custom-scrollbar">
+            {workspace.length === 0 && (
+              <div className="mt-20 flex flex-col items-center text-slate-400 p-8 text-center opacity-60">
+                <Layout className="w-12 h-12 mb-2"/>
+                <p>Canvas Empty</p>
+                <p className="text-sm">Select blocks from the left to start.</p>
+              </div>
+            )}
+
+            {workspace.map((step, idx) => {
+               const style = SYMBOLS[step.type];
+               return (
+                 <div key={`${step.id}-${idx}`} className="flex flex-col items-center w-full animate-in slide-in-from-bottom-2 duration-300">
+                   {/* Arrow */}
+                   {idx > 0 && <div className="h-6 w-0.5 bg-slate-400 mb-1"></div>}
+                   {idx > 0 && <div className="text-slate-400 -mt-2 mb-1">▼</div>}
+                   
+                   {/* Node */}
+                   <div 
+                      onClick={() => removeFromWorkspace(idx)}
+                      className="group relative cursor-pointer hover:-translate-y-0.5 transition-transform"
+                   >
+                     {/* Delete overlay */}
+                     <div className="absolute -right-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-rose-500 bg-white rounded-full p-1 shadow-sm transition-opacity">
+                       <X className="w-4 h-4"/>
+                     </div>
+
+                     {/* Shape Render */}
+                     <div 
+                        className={`
+                          relative flex items-center justify-center text-center p-2 text-sm font-medium text-slate-800 shadow-sm border-2
+                          ${style.color} w-48 h-16 transition-all
+                          ${style.shape === 'rounded-full' ? 'rounded-full' : ''}
+                          ${style.shape === 'rounded-sm' ? 'rounded-sm' : ''}
+                        `}
+                        style={
+                          style.shape === 'parallelogram' ? { transform: 'skew(-20deg)' } : 
+                          style.shape === 'rotate-45' ? { transform: 'rotate(45deg)', width: '4rem', height: '4rem', margin: '1rem' } : {}
+                        }
+                     >
+                       <div style={
+                          style.shape === 'parallelogram' ? { transform: 'skew(20deg)' } : 
+                          style.shape === 'rotate-45' ? { transform: 'rotate(-45deg)', width: '130px', fontSize: '0.75rem' } : {}
+                       }>
+                         {step.text}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )
+            })}
+          </div>
+
+          {/* Feedback & Actions */}
+          <div className="mt-auto bg-white p-4 rounded-lg shadow-lg border border-slate-200 z-20">
+            {feedback && (
+              <div className={`mb-3 p-3 rounded-md flex items-start gap-3 animate-in slide-in-from-bottom-2 ${feedback.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0"/> : <AlertTriangle className="w-5 h-5 shrink-0"/>}
+                <p className="text-sm font-medium">{feedback.msg}</p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <button
+                onClick={checkAnswer}
+                disabled={workspace.length === 0 || isCompleted}
+                className={`flex-1 py-3 rounded-lg font-bold flex justify-center items-center gap-2 shadow-lg transition-colors ${isCompleted ? 'bg-slate-200 text-slate-400 cursor-default' : 'bg-slate-900 text-white hover:bg-blue-700 shadow-blue-900/20'}`}
+              >
+                <Play className="w-4 h-4" /> Run Simulation
+              </button>
+
+              {/* Next Level Button */}
+              {isCompleted && levelIndex < currentGroupData.levels.length - 1 && (
+                 <button 
+                  onClick={handleNextLevel}
+                  className="flex-1 bg-emerald-500 text-white py-3 rounded-lg font-bold hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 flex justify-center items-center gap-2 animate-in fade-in slide-in-from-right-4"
+                 >
+                   Next Level <ChevronRight className="w-4 h-4" />
+                 </button>
+              )}
+               {isCompleted && levelIndex === currentGroupData.levels.length - 1 && (
+                 <div className="flex-1 bg-amber-100 text-amber-700 py-3 rounded-lg font-bold flex justify-center items-center gap-2 border border-amber-300 animate-in fade-in">
+                   <Star className="w-4 h-4 fill-amber-500"/> All Levels Complete!
+                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main App ---
+
+export default function FlowchartApp() {
+  const [currentMode, setMode] = useState('learn'); // 'learn' or 'practice'
+
+  return (
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
+      <Header setMode={setMode} currentMode={currentMode} />
+      
+      <main className="py-6">
+        {currentMode === 'learn' ? <LearningModule /> : <PracticeModule />}
+      </main>
+    </div>
+  );
+}
